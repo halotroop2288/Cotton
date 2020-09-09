@@ -1,26 +1,31 @@
-plugins {
-    id "com.jfrog.artifactory" version "4.9.0"
-    id "maven-publish"
-    id "fabric-loom" version "0.4-SNAPSHOT"
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "com.github.jengelman.gradle.plugins:shadow:5.2.0"
+    }
 }
 
-def minecraftVersion = "1.16.1"
-def yarnMappings = "1.16.1+build.9:v2"
-def loaderVersion = "0.8.8+build.202"
+plugins {
+    id "maven-publish"
+    id "java"
+}
 
-archivesBaseName = "cotton"
+apply plugin: "com.github.johnrengelman.shadow"
+
 version = "1.0.7"
+archivesBaseName = "cotton"
 group = "io.github.cottonmc.cotton"
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
+    jcenter()
     mavenLocal()
-    maven {
-        name = "Fabric Maven"
-        url = "http://maven.fabricmc.net"
-    }
     maven {
         name = "Cotton"
         url = "http://server.bbkr.space:8081/artifactory/libs-release/"
@@ -32,36 +37,12 @@ repositories {
 }
 
 dependencies {
-    minecraft "com.mojang:minecraft:$minecraftVersion"
-    mappings "net.fabricmc:yarn:$yarnMappings"
-    modImplementation "net.fabricmc:fabric-loader:$loaderVersion"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:0.14.0+build.371-1.16"
-
-    // `modApi`s below are for the dev env
-    def modules = ["player-events", "logging", "config", "datapack", "commons", "cauldron"]
-    modules.each { module ->
-        modApi ("io.github.cottonmc.cotton:cotton-$module:+") { transitive = false }
-        include "io.github.cottonmc.cotton:cotton-$module:+"
-    }
-    modApi ("io.github.cottonmc:Jankson-Fabric:2.0.1+j1.2.0") { transitive = false }
-    modImplementation "io.github.cottonmc:LibCD:2.5.0+1.16.1"
-    include "io.github.cottonmc:Jankson-Fabric:2.0.1+j1.2.0"
+    compile 'org.apache.commons:commons-lang3:3.11'
+    compile 'org.apache.logging.log4j:log4j-core:2.13.3'
 
     compileOnly ("com.google.code.findbugs:jsr305:3.0.2") { transitive = false }
-}
-
-
-processResources {
-    inputs.property "version", project.version
-
-    from(sourceSets.main.resources.srcDirs) {
-        include "fabric.mod.json"
-        expand "version": project.version
-    }
-
-    from(sourceSets.main.resources.srcDirs) {
-        exclude "fabric.mod.json"
-    }
+    implementation ("blue.endless:jankson:1.1.2") { transitive = false }
+    shadow ("blue.endless:jankson:1.1.2") { transitive = false }
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
@@ -69,57 +50,17 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
 
-jar {
-    from rootProject.files("LICENSE")
+shadowJar {
+    relocate 'blue.endless.jankson', 'io.github.cottonmc.repackage.blue.endless.jankson'
+    classifier("shadow")
+    configurations = [project.configurations.shadow]
 }
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            artifact ("${project.buildDir.absolutePath}/libs/${archivesBaseName}-${project.version}.jar") {
-                classifier null
-                builtBy remapJar
-            }
-
-            artifact ("${project.buildDir.absolutePath}/libs/${archivesBaseName}-${project.version}-dev.jar") {
-                classifier "dev"
-                builtBy remapJar
-            }
-
-            artifact(sourcesJar) {
-                builtBy remapSourcesJar
-            }
-        }
-    }
+jar {
+    from rootProject.files("LICENSE")
 }
 
 //Publishing details
 if (rootProject.file("private.gradle").exists()) {
     apply from: "private.gradle"
-}
-
-artifactory {
-    if (rootProject.hasProperty("artifactoryUsername")) {
-        contextUrl = "http://server.bbkr.space:8081/artifactory/"
-        publish {
-            repository {
-                if (version.contains("SNAPSHOT")) {
-                    repoKey = "libs-snapshot"
-                } else {
-                    repoKey = "libs-release"
-                }
-
-                username = artifactoryUsername
-                password = artifactoryPassword
-            }
-            defaults {
-                publications("maven")
-
-                publishArtifacts = true
-                publishPom = true
-            }
-        }
-    } else {
-        println "Cannot configure artifactory; please define ext.artifactoryUsername and ext.artifactoryPassword before running artifactoryPublish"
-    }
 }
