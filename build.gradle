@@ -26,14 +26,6 @@ targetCompatibility = 1.8
 repositories {
     jcenter()
     mavenLocal()
-    maven {
-        name = "Cotton"
-        url = "http://server.bbkr.space:8081/artifactory/libs-release/"
-    }
-    maven {
-        name = "Cotton (snapshots)"
-        url = "http://server.bbkr.space:8081/artifactory/libs-snapshot/"
-    }
 }
 
 dependencies {
@@ -46,7 +38,7 @@ dependencies {
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = "sources"
+    classifier("sources")
     from sourceSets.main.allSource
 }
 
@@ -57,10 +49,10 @@ shadowJar {
 }
 
 jar {
-    from rootProject.files("LICENSE")
+    from file("LICENSE")
 }
 
 //Publishing details
-if (rootProject.file("private.gradle").exists()) {
+if (file("private.gradle").exists()) {
     apply from: "private.gradle"
 }
