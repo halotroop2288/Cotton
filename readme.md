@@ -2,14 +2,13 @@
 
 [![Maven metadata URL](https://img.shields.io/maven-metadata/v/http/server.bbkr.space:8081/artifactory/libs-release/io/github/cottonmc/cotton/cotton/maven-metadata.xml.svg)](http://server.bbkr.space:8081/artifactory/libs-release/io/github/cottonmc/cotton/cotton)
 
-> Cotton is now modular, like fabric, and modules are not compatible with the `include` configuration. Please use `modCompile`, `modApi`, or `modImplementation` and list the modules you use in your fabric.mod.json
+> Cotton is not modular anymore, yay! (Trust me, this is better for everyone.)
 
 ## Features
+- Block and item unification, common tags
 - Config files
 - Custom logger
 - Global datapacks
-- Cauldron API
-- Block and item unification, common tags
 - Recipe nullification
 
 ## Upcoming Features
